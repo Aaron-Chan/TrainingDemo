@@ -22,10 +22,10 @@ void worker(once_flag* flag)
 
  int main()
  {
-    once_flag flag;
- 	thread thread1(worker, flag);
-    thread thread2(worker, flag);
- 	thread thread3(worker, flag);
+   once_flag flag;
+ 	thread thread1(worker, &flag);
+   thread thread2(worker, &flag);
+ 	thread thread3(worker, &flag);
  	thread1.join();
  	thread2.join();
  	thread3.join();
