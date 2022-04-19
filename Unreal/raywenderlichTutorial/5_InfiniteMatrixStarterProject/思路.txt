@@ -1,0 +1,40 @@
+speed往 +x
+BP_TunnelSpawner SpawnTunnel SpawnLocation
+BP_Tunnel 加入一个triggerzoo放在最后面 然后添加碰撞事件需要判断是否是player  让BP_TunnelSpawner需要SpawnTunnelAtSpawnPoint在对应点生成, 并添加Spawnpoint
+
+BP_Tunnel需要合BP_TunnelSpawner相互引用
+BP_TunnelSpawner SpawnInitialTunnels方法 在初始化的时候调用，然后3个 判断是否BP_Tunnel的引用有效，无效就在player的位置生成，有效就SpawnTunnelAtSpawnPoint
+
+
+制造障碍
+WallMesh创建
+SM_Hole_01
+(2470, 0, 0) 旋转 0-360和  RandomizeWall变化的staticmesh
+
+Select节点提供网格列表
+使用Random Integer in Range节点选择随机网格
+Set Static Mesh节点将WallMesh设置为选定的网格
+AddLocalRotation节点向WallMesh添加随机旋转偏移
+
+处理墙壁碰撞
+IsDead 
+并在WallMesh碰撞的时候设置为true
+
+
+显示重启按钮
+一开始就创建
+在isdead的时候DisplayRestart 添加到viewport，playercontroller只与ui交互，cursor显示
+
+
+重置播放器
+RestartGame
+Set Is Dead将IsDead设置为false。这重新启用了向前运动。
+Remove From Parent从屏幕上删除RestartWidget
+Set Input Mode Game Only重新启用游戏输入，以便玩家可以四处移动
+Set Show Mouse Cursor隐藏鼠标光标
+
+重生隧道
+SpawnInitialTunnels：sequence顺序节点  先销毁 后生成
+
+处理按钮点击
+点击的时候获取pawn并转换为player 然后restartgame 然后获取pawner并调用其SpawnInitialTunnels
