@@ -26,8 +26,9 @@ public class MyThirdLibPlugin : ModuleRules
 			new string[]
 			{
 				"Core",
+				"CoreUObject",//为了UObject
 				"MyThirdLibPluginLibrary",
-				"Projects"
+				"Projects", 
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);

@@ -14,4 +14,7 @@ class PLUGINDEMO_API APluginDemoGameModeBase : public AGameModeBase
 {
 	GENERATED_BODY()
 	
+	protected:
+	virtual void BeginPlay() override;
+	
 };

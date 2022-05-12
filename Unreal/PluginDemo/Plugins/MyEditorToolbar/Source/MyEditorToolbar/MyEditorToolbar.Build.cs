@@ -42,6 +42,7 @@ public class MyEditorToolbar : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
+				"LevelEditor"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

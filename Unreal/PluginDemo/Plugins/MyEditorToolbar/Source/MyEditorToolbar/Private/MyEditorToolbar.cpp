@@ -5,6 +5,7 @@
 #include "MyEditorToolbarCommands.h"
 #include "Misc/MessageDialog.h"
 #include "ToolMenus.h"
+#include "LevelEditor.h"
 
 static const FName MyEditorToolbarTabName("MyEditorToolbar");
 
@@ -77,6 +78,53 @@ void FMyEditorToolbarModule::RegisterMenus()
 			}
 		}
 	}
+	{
+		TSharedPtr<FExtender> ToolExtender = MakeShareable(new FExtender());
+		ToolExtender->AddToolBarExtension("Content", EExtensionHook::After, PluginCommands,
+			FToolBarExtensionDelegate::CreateRaw(
+				this, &FMyEditorToolbarModule::AddToolBarExtension));
+		FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
+		LevelEditorModule.GetToolBarExtensibilityManager()->AddExtender(ToolExtender);
+	}
+
+	{
+		TSharedPtr<FExtender> MenuExtender = MakeShareable(new FExtender());
+		MenuExtender->AddMenuBarExtension("Help", EExtensionHook::After, PluginCommands,
+			FMenuBarExtensionDelegate::CreateRaw(
+				this, &FMyEditorToolbarModule::AddMenuBarExtension));
+		FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
+		LevelEditorModule.GetMenuExtensibilityManager()->AddExtender(MenuExtender);
+	}
+
+	{
+
+		UToolMenus* ToolMenus = UToolMenus::Get();
+		UToolMenu* MyMenu = ToolMenus->RegisterMenu("LevelEditor.MainMenu.MySubMenu");
+
+		FToolMenuSection& Section = MyMenu->AddSection("MySection0");
+		Section.AddMenuEntryWithCommandList(FMyEditorToolbarCommands::Get().PluginAction, PluginCommands);
+		UToolMenu* MenuBar = UToolMenus::Get()->ExtendMenu("LevelEditor.MainMenu");
+		MenuBar->AddSubMenu(
+			"MainMenu",
+			"MySection",
+			"MySubMenu",
+			LOCTEXT("MyMenu", "My")
+		);
+	}
+
+	
+}
+
+void FMyEditorToolbarModule::AddToolBarExtension(class FToolBarBuilder& Builder)
+{
+	Builder.BeginSection(TEXT("MyButton2"));
+	Builder.AddToolBarButton(FMyEditorToolbarCommands::Get().PluginAction);
+	Builder.EndSection();
+}
+
+void FMyEditorToolbarModule::AddMenuBarExtension(class FMenuBarBuilder& Builder)
+{
+	Builder.AddMenuEntry(FMyEditorToolbarCommands::Get().PluginAction);
 }
 
 #undef LOCTEXT_NAMESPACE

@@ -20,7 +20,8 @@ public:
 	void PluginButtonClicked();
 	
 private:
-
+	void AddMenuBarExtension(FMenuBarBuilder& Builder);
+	void AddToolBarExtension(FToolBarBuilder& Builder);
 	void RegisterMenus();
 
 
