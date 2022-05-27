@@ -43,6 +43,7 @@ public class ReflectionSearchPlugin : ModuleRules
 				"Slate",
 				"SlateCore",
 				"EditorStyle",
+				"LevelEditor"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

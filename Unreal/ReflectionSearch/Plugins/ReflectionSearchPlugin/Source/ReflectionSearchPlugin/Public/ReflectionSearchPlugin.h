@@ -8,6 +8,8 @@
 class FToolBarBuilder;
 class FMenuBuilder;
 
+DECLARE_LOG_CATEGORY_EXTERN(ReflectionSearchPlugin, Verbose, All);
+
 class FReflectionSearchPluginModule : public IModuleInterface
 {
 public:
@@ -24,6 +26,7 @@ private:
 	void RegisterMenus();
 
 	TSharedRef<class SDockTab> OnSpawnPluginTab(const class FSpawnTabArgs& SpawnTabArgs);
+	void OnActorMenuClicked();
 
 private:
 	TSharedPtr<class FUICommandList> PluginCommands;
