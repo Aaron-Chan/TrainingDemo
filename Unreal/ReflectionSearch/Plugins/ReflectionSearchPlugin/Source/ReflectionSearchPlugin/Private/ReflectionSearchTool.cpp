@@ -157,6 +157,12 @@ void ReflectionSearchTool::CollectItems(UClass* const Class, int32 Level)
 	}
 }
 
+void ReflectionSearchTool::SetSearchStr(FString SearchString)
+{
+	this->SearchStr = SearchString;
+	this->SearchBoxPtr->SetText(FText::FromString(SearchString));
+}
+
 void ReflectionSearchTool::OnSearch(const FString FilterStr, int32 Level)
 {
 	FilteredItems.Reset();

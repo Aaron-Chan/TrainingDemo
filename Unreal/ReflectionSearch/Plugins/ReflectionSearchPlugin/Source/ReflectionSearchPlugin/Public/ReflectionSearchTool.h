@@ -30,10 +30,7 @@ public:
 
 	virtual ~ReflectionSearchTool();
 
-	void SetSearchStr(FString SearchString)
-	{
-		this->SearchStr = SearchString;
-	}
+	void SetSearchStr(FString SearchString);
 
 	void UpdateView();
 
