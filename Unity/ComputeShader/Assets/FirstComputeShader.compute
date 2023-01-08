@@ -10,5 +10,5 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 {
     // TODO: insert actual code here!
 
-    Result[id.xy] = float4(0,1,1,1.0);
+    Result[id.xy] = float4((id.x%8)/8.0f,(id.x%8)/8.0f,1,1.0);
 }

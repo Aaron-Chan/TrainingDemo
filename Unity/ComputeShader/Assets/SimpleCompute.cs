@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 public class SimpleCompute : MonoBehaviour
 {
-	Image _image;
+	public Material material;
 	public ComputeShader computeShader;
 
 
@@ -18,13 +18,12 @@ public class SimpleCompute : MonoBehaviour
 
 	private void InitShader()
 	{
-		_image = GetComponent<Image>();
 		int _kernelIndex = computeShader.FindKernel("CSMain");
 		int width = 1024, height = 1024;
 		RenderTexture _rt = new RenderTexture(width, height, 0) { enableRandomWrite = true };
 		_rt.Create();
 
-		_image.material.SetTexture("_MainTex", _rt);
+		material.SetTexture("_MainTex", _rt);
 		computeShader.SetTexture(_kernelIndex, "Result", _rt);
 		computeShader.Dispatch(_kernelIndex, width / 8, height / 8, 1);
 	}

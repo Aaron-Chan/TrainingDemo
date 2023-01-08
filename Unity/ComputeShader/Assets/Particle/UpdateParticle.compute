@@ -1,0 +1,30 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel UpdateParticle
+
+
+struct ParticleData 
+{
+    float3 position;
+    float4 color;
+};
+
+RWStructuredBuffer<ParticleData> ParticleBuffer;
+
+float Time;
+
+[numthreads(10,10,10)]
+void UpdateParticle(uint3 groupId : SV_GroupID,
+    uint groupIndex : SV_GroupIndex)
+{
+    // 1000 is numthreads
+    int particleIndex = groupIndex + groupId.x * 1000;
+    
+
+    float x = sin(groupIndex);
+	float y = sin(groupIndex * 1.2f);
+	float3 forward = float3(x, y, -sqrt(1 - x * x - y * y));
+	ParticleBuffer[particleIndex].color = float4(forward.x, forward.y, cos(groupIndex) * 0.5f + 0.5, 1);
+	if (Time > groupId.x)
+		ParticleBuffer[particleIndex].position += forward * 0.005f;
+
+}
