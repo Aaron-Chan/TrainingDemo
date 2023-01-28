@@ -1,0 +1,132 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel GrassCulling
+
+
+uint instanceCount;
+AppendStructuredBuffer<float4x4> cullresult;
+StructuredBuffer<float4x4> input;
+
+float4x4 vp;
+Texture2D hizTexture;
+uint depthTextureSize;
+bool isOpenGL;
+
+
+static float3 boundMin = float3(-0.2f, 0.0f, -0.3f);//包围盒最小点
+static float3 boundMax = float3(0.2f, 0.5f, 0.3f);//包围盒最大点
+
+bool IsInClipSpace(float4 clipPoint)
+{
+	float w = clipPoint.w;
+	if(isOpenGL)
+	{
+		return clipPoint.x < w && clipPoint.x>-w && clipPoint.y < w && clipPoint.y>-w && clipPoint.z < w && clipPoint.z>-w;
+	}
+	else
+	{
+		return clipPoint.x < w && clipPoint.x>-w && clipPoint.y < w && clipPoint.y>-w && clipPoint.z < w && clipPoint.z>0;
+	}
+}
+
+[numthreads(640,1,1)]
+void GrassCulling (uint3 id : SV_DispatchThreadID)
+{
+	uint index = id.x;
+	if(index >= instanceCount)
+	{
+		return;
+	}
+	float4x4 positionInfo = input[index];
+
+	float minX = 1.0;
+	float maxX = -1.0;
+
+	float minY = 1.0;
+	float maxY = -1.0;
+
+	float minZ = 1.0;
+	float maxZ = -1.0;
+
+	float4 boundVerts[8];//AABB8个顶点坐标 ss
+	boundVerts[0] = mul(positionInfo, float4(boundMax, 1.0));
+	boundVerts[1] = mul(positionInfo, float4(boundMin, 1.0));
+	boundVerts[2] = mul(positionInfo, float4(boundMin.x, boundMin.y, boundMax.z, 1.0));
+	boundVerts[3] = mul(positionInfo, float4(boundMin.x, boundMax.y, boundMin.z, 1.0));
+	boundVerts[4] = mul(positionInfo, float4(boundMin.x, boundMax.y, boundMax.z, 1.0));
+
+	boundVerts[5] = mul(positionInfo, float4(boundMax.x, boundMin.y, boundMax.z, 1.0));
+	boundVerts[6] = mul(positionInfo, float4(boundMax.x, boundMax.y, boundMin.z, 1.0));
+	boundVerts[7] = mul(positionInfo, float4(boundMax.x, boundMin.y, boundMin.z, 1.0));
+
+	bool isClipInClipSpace = false;
+
+	for(int j=0;j<8;j++){
+
+		float4 clipPoint = mul(vp, boundVerts[j]);
+		if (!isClipInClipSpace && IsInClipSpace(clipPoint))
+            isClipInClipSpace = true;
+
+		float4 ndcPoint =clipPoint / clipPoint.w;
+		minX = min(ndcPoint.x, minX);
+		minY = min(ndcPoint.y, minY);
+		minZ = min(ndcPoint.z, minZ);
+
+		maxX = max(ndcPoint.x, maxX);
+		maxY = max(ndcPoint.y, maxY);
+		maxZ = max(ndcPoint.z, maxZ);
+	}
+	if(!isClipInClipSpace)
+	{
+		return;
+	}
+
+	float depth = maxZ;
+	if(isOpenGL){
+		depth = minZ;
+		depth = depth * 0.5f+0.5f;
+	}
+
+	float2 uvLeftBottom = float2(minX, minY)*0.5f + 0.5f;
+	float2 uvRightTop = float2(maxX, maxY)*0.5f + 0.5f;
+
+	 //计算应该读取哪层mipmap
+    uint mipmapLevel = (uint)clamp(depthTextureSize * 2 / log2(max(maxX - minX, maxY - minY)), 0, log2(depthTextureSize) - 4);
+    //当前mipmap的大小
+    uint size = depthTextureSize / (1 << mipmapLevel);
+
+	//左下角和右下角点所在的像素
+    uint2 pixelLeftBottom = uint2(clamp(uvLeftBottom.x * size, 0, size - 1), clamp(uvLeftBottom.y * size, 0, size - 1));
+    uint2 pixelRightTop = uint2(clamp(uvRightTop.x * size, 0, size - 1), clamp(uvRightTop.y * size, 0, size - 1));
+    //采样对应深度图的对应像素的深度值，并且作比较
+    float depthInTexture = hizTexture.mips[mipmapLevel][pixelLeftBottom].r;
+    if (isOpenGL) {
+        if (pixelLeftBottom.x < pixelRightTop.x && pixelLeftBottom.y < pixelRightTop.y) {
+            depthInTexture = max(max(depthInTexture, hizTexture.mips[mipmapLevel][pixelRightTop].r),
+                max(hizTexture.mips[mipmapLevel][int2(pixelLeftBottom.x, pixelRightTop.y)].r, hizTexture.mips[mipmapLevel][int2(pixelRightTop.x, pixelLeftBottom.y)].r));
+        }
+        else if (pixelLeftBottom.x < pixelRightTop.x)
+            depthInTexture = max(depthInTexture, hizTexture.mips[mipmapLevel][int2(pixelRightTop.x, pixelLeftBottom.y)].r);
+        else if (pixelLeftBottom.y < pixelRightTop.y)
+            depthInTexture = max(depthInTexture, hizTexture.mips[mipmapLevel][int2(pixelLeftBottom.x, pixelRightTop.y)].r);
+
+        if (depthInTexture < depth)
+            return;
+    }
+    else {
+        if (pixelLeftBottom.x < pixelRightTop.x && pixelLeftBottom.y < pixelRightTop.y) {
+            depthInTexture = min(min(depthInTexture, hizTexture.mips[mipmapLevel][pixelRightTop].r),
+                min(hizTexture.mips[mipmapLevel][int2(pixelLeftBottom.x, pixelRightTop.y)].r, hizTexture.mips[mipmapLevel][int2(pixelRightTop.x, pixelLeftBottom.y)].r));
+        }
+        else if (pixelLeftBottom.x < pixelRightTop.x)
+            depthInTexture = min(depthInTexture, hizTexture.mips[mipmapLevel][int2(pixelRightTop.x, pixelLeftBottom.y)].r);
+        else if (pixelLeftBottom.y < pixelRightTop.y)
+            depthInTexture = min(depthInTexture, hizTexture.mips[mipmapLevel][int2(pixelLeftBottom.x, pixelRightTop.y)].r);
+
+        if (depthInTexture > depth)
+            return;
+    }
+
+    //视椎剔除和遮挡剔除后的存活的仔
+    cullresult.Append(positionInfo);
+
+}
