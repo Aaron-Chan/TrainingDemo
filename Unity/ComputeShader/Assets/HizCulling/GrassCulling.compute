@@ -90,7 +90,9 @@ void GrassCulling (uint3 id : SV_DispatchThreadID)
 	float2 uvRightTop = float2(maxX, maxY)*0.5f + 0.5f;
 
 	 //计算应该读取哪层mipmap
-    uint mipmapLevel = (uint)clamp(depthTextureSize * 2 / log2(max(maxX - minX, maxY - minY)), 0, log2(depthTextureSize) - 4);
+	//这里为什么要0.5因为最后是向取深度图中的4个像素进行对比
+	uint mipmapLevel = (uint)clamp(log2(max(maxX - minX, maxY - minY) * 0.5f * depthTextureSize), 0, log2(depthTextureSize) - 4);
+
     //当前mipmap的大小
     uint size = depthTextureSize / (1 << mipmapLevel);
 
